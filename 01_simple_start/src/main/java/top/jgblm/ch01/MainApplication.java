@@ -1,4 +1,4 @@
-package top.jgblm;
+package top.jgblm.ch01;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

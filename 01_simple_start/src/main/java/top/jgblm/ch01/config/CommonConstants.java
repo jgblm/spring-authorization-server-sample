@@ -1,4 +1,4 @@
-package top.jgblm.config;
+package top.jgblm.ch01.config;
 
 
 public class CommonConstants {

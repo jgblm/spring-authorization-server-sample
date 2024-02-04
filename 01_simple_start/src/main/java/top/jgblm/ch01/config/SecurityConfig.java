@@ -1,4 +1,4 @@
-package top.jgblm.config;
+package top.jgblm.ch01.config;
 
 import java.util.UUID;
 import javax.crypto.spec.SecretKeySpec;
