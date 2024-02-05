@@ -10,6 +10,7 @@
     <version>1.0-SNAPSHOT</version>
     <modules>
         <module>01_simple_start</module>
+        <module>02_return_json_after_grant</module>
     </modules>
 
     <name>spring-authorization-server-sample</name>
