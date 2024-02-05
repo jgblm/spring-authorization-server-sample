@@ -1,5 +1,8 @@
 package top.jgblm.ch02.config;
 
+import com.alibaba.fastjson.JSONObject;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.PrintWriter;
 import java.util.UUID;
 import javax.crypto.spec.SecretKeySpec;
 import org.springframework.context.annotation.Bean;
@@ -16,10 +19,12 @@ import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import org.springframework.security.oauth2.server.authorization.authentication.OAuth2AuthorizationCodeRequestAuthenticationToken;
 import org.springframework.security.oauth2.server.authorization.client.InMemoryRegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
+import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
 import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
@@ -37,6 +42,24 @@ public class SecurityConfig {
   public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http)
       throws Exception {
     OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
+    http.getConfigurer(OAuth2AuthorizationServerConfigurer.class)
+        .authorizationEndpoint(
+            endpoint ->
+                endpoint.authorizationResponseHandler(
+                    (request, response, authentication) -> {
+                      OAuth2AuthorizationCodeRequestAuthenticationToken token =
+                          (OAuth2AuthorizationCodeRequestAuthenticationToken) authentication;
+                      String code = token.getAuthorizationCode().getTokenValue();
+                      JSONObject json = new JSONObject();
+                      json.put("uri", "http://www.baidu.com");
+                      json.put("code", code);
+                      response.setContentType("application/json;charset=utf-8");
+                      PrintWriter out = response.getWriter();
+                      String s = new ObjectMapper().writeValueAsString(json);
+                      out.write(s);
+                      out.flush();
+                      out.close();
+                    }));
     http
         // Redirect to the login page when not authenticated from the
         // authorization endpoint
