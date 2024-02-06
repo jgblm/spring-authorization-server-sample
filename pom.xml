@@ -11,6 +11,7 @@
     <modules>
         <module>01_simple_start</module>
         <module>02_return_json_after_grant</module>
+        <module>03_login_with_verify_code</module>
     </modules>
 
     <name>spring-authorization-server-sample</name>
