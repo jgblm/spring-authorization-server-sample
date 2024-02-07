@@ -1,14 +1,19 @@
 package top.jgblm.ch03.config;
 
+import com.alibaba.fastjson.JSONObject;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.PrintWriter;
 import java.util.UUID;
 import javax.crypto.spec.SecretKeySpec;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -31,10 +36,7 @@ import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 @EnableWebSecurity
 public class SecurityConfig {
 
-  /**
-   * 授权服务器安全筛选器链
-   * 开发OAuth2服务，异常默认跳转/login, 使能jwt
-   */
+  /** 授权服务器安全筛选器链 开发OAuth2服务，异常默认跳转/login, 使能jwt */
   @Bean
   @Order(1)
   public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http)
@@ -54,15 +56,47 @@ public class SecurityConfig {
     return http.build();
   }
 
-  /**
-   * 默认安全筛选器链
-   * 所有接口需要授权，开放form登录
-   */
+  /** 默认安全筛选器链 所有接口需要授权，开放form登录 */
   @Bean
   @Order(2)
   public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
-    http.authorizeHttpRequests((authorize) -> authorize.anyRequest().authenticated())
-        .formLogin(Customizer.withDefaults());
+    http.authorizeHttpRequests(
+            (authorize) ->
+                authorize.requestMatchers("/vc.jpg").permitAll().anyRequest().authenticated())
+        .formLogin(
+                // 登录结果修改为json格式
+            form ->
+                form.successHandler(
+                        (req, resp, auth) -> {
+                          resp.setContentType("application/json;charset=utf-8");
+                          JSONObject json = new JSONObject();
+                          json.put("status", "success");
+                          json.put("data", auth.getPrincipal());
+                          PrintWriter out = resp.getWriter();
+                          out.write(new ObjectMapper().writeValueAsString(json));
+                          out.flush();
+                          out.close();
+                        })
+                    .failureHandler(
+                        (req, resp, e) -> {
+                          resp.setContentType("application/json;charset=utf-8");
+                          JSONObject json = new JSONObject();
+                          json.put("status", "error");
+                          json.put("data", e.getMessage());
+                          PrintWriter out = resp.getWriter();
+                          out.write(new ObjectMapper().writeValueAsString(json));
+                          out.flush();
+                          out.close();
+                        }));
+
+    // 自定义认证方式,校验验证码
+    MyAuthenticationProvider provider = new MyAuthenticationProvider();
+    provider.setUserDetailsService(userDetailsService());
+
+    ProviderManager manager = new ProviderManager(provider);
+    http.authenticationManager(manager);
+
+    http.csrf(AbstractHttpConfigurer::disable);
 
     return http.build();
   }
