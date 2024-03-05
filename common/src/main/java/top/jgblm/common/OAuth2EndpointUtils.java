@@ -1,4 +1,4 @@
-package top.jgblm.ch04.util;
+package top.jgblm.common;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Collections;

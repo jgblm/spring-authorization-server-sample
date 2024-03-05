@@ -1,19 +1,23 @@
 package top.jgblm.ch04.config;
 
 import lombok.Getter;
+import lombok.Setter;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 
 import java.util.Collection;
 import java.util.Map;
 
+@Getter
 public class CustomPasswordToken implements Authentication {
 
-  @Getter
   private final Authentication clientPrincipal;
 
-  @Getter private final Map<String, Object> additionalParameters;
+  private final Map<String, Object> additionalParameters;
+
+  @Setter private UserDetails userDetails;
 
   public CustomPasswordToken(
       Authentication clientPrincipal, Map<String, Object> additionalParameters) {

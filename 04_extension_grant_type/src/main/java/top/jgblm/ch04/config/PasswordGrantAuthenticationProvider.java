@@ -1,6 +1,5 @@
 package top.jgblm.ch04.config;
 
-import com.nimbusds.jose.jwk.source.ImmutableSecret;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import jakarta.annotation.Nonnull;
@@ -13,7 +12,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.*;
-import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2AccessTokenAuthenticationToken;
@@ -28,13 +27,20 @@ public class PasswordGrantAuthenticationProvider implements AuthenticationProvid
 
   private final AuthenticationManager authenticationManager;
   private final JwtGenerator tokenGenerator;
-
   private final PasswordEncoder passwordEncoder;
 
   public PasswordGrantAuthenticationProvider(
-      AuthenticationManager authenticationManager, JwtGenerator tokenGenerator) {
+      AuthenticationManager authenticationManager, JWKSource<SecurityContext> jwkSource) {
     this.authenticationManager = authenticationManager;
-    this.tokenGenerator = tokenGenerator;
+    this.tokenGenerator = new JwtGenerator(new NimbusJwtEncoder(jwkSource));
+    tokenGenerator.setJwtCustomizer(
+        (jwt) -> {
+          CustomPasswordToken customToken = jwt.getPrincipal();
+          UserDetails userDetails = customToken.getUserDetails();
+          JwtClaimsSet.Builder claims = jwt.getClaims();
+          claims.claim("username", userDetails.getUsername());
+          claims.claim("role", userDetails.getAuthorities());
+        });
     this.passwordEncoder = PasswordEncoderFactories.createDelegatingPasswordEncoder();
   }
 
@@ -81,16 +87,16 @@ public class PasswordGrantAuthenticationProvider implements AuthenticationProvid
     if (user == null) {
       throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_CLIENT);
     }
+    customToken.setUserDetails(user);
 
     // Generate the access token
     OAuth2TokenContext tokenContext =
         DefaultOAuth2TokenContext.builder()
             .registeredClient(registeredClient)
-            .principal(clientPrincipal)
+            .principal(customToken)
             .authorizationServerContext(AuthorizationServerContextHolder.getContext())
             .tokenType(OAuth2TokenType.ACCESS_TOKEN)
             .authorizationGrantType(customToken.getGrantType())
-            .authorizationGrant(customToken)
             .build();
 
     OAuth2Token generatedAccessToken = this.tokenGenerator.generate(tokenContext);

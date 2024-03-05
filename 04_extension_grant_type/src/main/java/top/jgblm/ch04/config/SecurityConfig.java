@@ -24,7 +24,6 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.oauth2.server.authorization.client.InMemoryRegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
@@ -34,7 +33,6 @@ import org.springframework.security.oauth2.server.authorization.settings.Authori
 import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
 import org.springframework.security.oauth2.server.authorization.settings.OAuth2TokenFormat;
 import org.springframework.security.oauth2.server.authorization.settings.TokenSettings;
-import org.springframework.security.oauth2.server.authorization.token.JwtGenerator;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 
@@ -48,17 +46,15 @@ public class SecurityConfig {
   public SecurityFilterChain authorizationServerSecurityFilterChain(
       HttpSecurity http, AuthenticationManager authenticationManager) throws Exception {
     OAuth2AuthorizationServerConfiguration.applyDefaultSecurity(http);
-    JwtGenerator jwtGenerator = new JwtGenerator(new NimbusJwtEncoder(jwkSource()));
-    http
-        .getConfigurer(OAuth2AuthorizationServerConfigurer.class)
+    http.getConfigurer(OAuth2AuthorizationServerConfigurer.class)
         .tokenEndpoint(
             tokenEndpoint ->
                 tokenEndpoint
-                        // 配置新的grant_type的Converter和Provider
+                    // 配置新的grant_type的Converter和Provider
                     .accessTokenRequestConverter(new PasswordGrantAuthenticationConverter())
                     .authenticationProvider(
                         new PasswordGrantAuthenticationProvider(
-                            authenticationManager, jwtGenerator)));
+                            authenticationManager, jwkSource())));
 
     return http.build();
   }

@@ -8,7 +8,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.endpoint.OAuth2ParameterNames;
 import org.springframework.security.web.authentication.AuthenticationConverter;
 import org.springframework.util.MultiValueMap;
-import top.jgblm.ch04.util.OAuth2EndpointUtils;
+import top.jgblm.common.OAuth2EndpointUtils;
 import top.jgblm.common.CommonConstants;
 
 public class PasswordGrantAuthenticationConverter implements AuthenticationConverter {
